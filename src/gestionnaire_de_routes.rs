@@ -25,7 +25,7 @@ impl Route {
 pub struct Interface {
     pub interface: String,
     pub durees: BTreeMap<DateTime<Local>, Duration>,
-    pub duree_moyenne: Duration,
+    pub duree_moyenne: Option<Duration>,
 }
 
 impl Interface {
@@ -33,7 +33,7 @@ impl Interface {
         Self {
             interface,
             durees: BTreeMap::new(),
-            duree_moyenne: Duration::from_secs(1000)
+            duree_moyenne: None
         }
     }
 }
@@ -94,7 +94,7 @@ pub fn calculer_duree_moyenne(interfaces: &mut Interfaces) {
             }
             somme_durees = somme_durees + *valeur;
         }
-        details_interface.duree_moyenne = somme_durees/details_interface.durees.len() as u32;
+        details_interface.duree_moyenne = Some(somme_durees/details_interface.durees.len() as u32);
 
         //Retirer les valeurs agées de 15 minutes ou plus
         for clef in clefs_a_retirer {

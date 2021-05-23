@@ -1,4 +1,4 @@
-use std::{thread, time};
+use std::{thread, time::{Duration}};
 
 mod gestionnaire_de_routes;
 
@@ -23,13 +23,13 @@ fn main() {
 
             for (_interface, details_interface) in &mut interfaces.liste_interfaces {
                 for (date,duree) in &mut details_interface.durees{
-                    println!("Durée : {} {:?} {:?}", date,duree,details_interface.duree_moyenne);
+                    println!("Durée : {} {:?} {:?}", date,duree,details_interface.duree_moyenne.unwrap_or(Duration::from_micros(0)));
                 }
             }
             
         }
         gestionnaire_de_routes::calculer_duree_moyenne(&mut interfaces);
-        thread::sleep(time::Duration::from_secs(5));
+        thread::sleep(Duration::from_secs(5));
 
         n = n + 1;
     }
