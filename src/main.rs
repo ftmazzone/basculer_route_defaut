@@ -21,13 +21,11 @@ fn main() {
                 route.route
             );
 
-            let details_interface = interfaces
-            .liste_interfaces.entry(interface.to_owned())
-            .or_insert(gestionnaire_de_routes::Interface::new(interface.to_owned()));
-
+            for (_interface, details_interface) in &mut interfaces.liste_interfaces {
                 for (date,duree) in &mut details_interface.durees{
                     println!("Durée : {} {}", date,duree.as_millis());
                 }
+            }
             
         }
         thread::sleep(time::Duration::from_secs(5));
