@@ -23,11 +23,12 @@ fn main() {
 
             for (_interface, details_interface) in &mut interfaces.liste_interfaces {
                 for (date,duree) in &mut details_interface.durees{
-                    println!("Durée : {} {}", date,duree.as_millis());
+                    println!("Durée : {} {:?} {:?}", date,duree,details_interface.duree_moyenne);
                 }
             }
             
         }
+        gestionnaire_de_routes::calculer_duree_moyenne(&mut interfaces);
         thread::sleep(time::Duration::from_secs(5));
 
         n = n + 1;
