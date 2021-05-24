@@ -10,19 +10,19 @@ fn main() {
     while n < 100000 {
         let mut routes = gestionnaire_de_routes::lister_routes();
 
-        for (interface, route) in &mut routes {
-            let duree = gestionnaire_de_routes::tester_route(interface, &mut interfaces);
+        for (interface, _route) in &mut routes {
+             gestionnaire_de_routes::tester_route(interface, &mut interfaces);
    
         }
         gestionnaire_de_routes::calculer_duree_moyenne(&mut interfaces);
-        gestionnaire_de_routes::trier_routes(INTERFACE_PRIVILEGIEE,  routes, &mut interfaces);
+     let routes_triees=   gestionnaire_de_routes::trier_routes(INTERFACE_PRIVILEGIEE,  routes, &mut interfaces);
   
-        for (interface, route) in &mut routes {
+        for  route in  routes_triees {
             println!(
-                "Interface : '{}' Durée : {:?} Note : {:?} Route : '{}'",
-                interface,
-                duree.unwrap_or(Duration::new(0, 0)),
-                route.note
+                "Interface : '{}' Métrique : {:?} Note : {:?} Route : '{}'",
+                route.interface,
+                route.metrique,
+                route.note,
                 route.route
             );
         }
