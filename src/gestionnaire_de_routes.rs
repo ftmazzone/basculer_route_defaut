@@ -5,6 +5,8 @@ use std::process::{Command, Stdio};
 use std::time::Duration;
 use std::vec::Vec;
 
+static DUREE_ATTENTE_MAXIMUM_SECONDES: u64 = 5;
+
 //dbg!(routes_groupees.clone());
 
 #[derive(Debug, Clone)]
@@ -22,7 +24,7 @@ impl Route {
         interface: String,
         route: String,
         metrique: Option<i32>,
-        duree_moyenne : Option<Duration>,
+        duree_moyenne: Option<Duration>,
         note: Option<f32>,
         metrique_desiree: Option<i32>,
     ) -> Self {
@@ -100,21 +102,33 @@ pub fn tester_route(interface: &String, interfaces: &mut Interfaces) -> Option<D
 
 /// Calculer la durée moyenne des requêtes ICMP des interfaces et retirer les valeurs les plus obsolètes.
 pub fn calculer_duree_moyenne(interfaces: &mut Interfaces) {
+    let duree_maximum = Duration::from_secs(DUREE_ATTENTE_MAXIMUM_SECONDES);
+
     for (_interface, details_interface) in &mut interfaces.liste_interfaces {
         let mut clefs_a_retirer = HashSet::new();
         let mut somme_durees = Duration::new(0, 0);
+
+        let mut derniere_duree = None;
 
         for (&clef, valeur) in &mut details_interface.durees {
             if Local::now().signed_duration_since(clef) > chrono::Duration::minutes(15) {
                 clefs_a_retirer.insert(clef);
             }
-            match *valeur {
-                Some(x) => somme_durees = somme_durees + x,
-                None => somme_durees = somme_durees + Duration::from_secs(5),
+            if let Some(x) = *valeur {
+                somme_durees = somme_durees + x;
+                derniere_duree = Some(x);
+            } else {
+                somme_durees = somme_durees + duree_maximum;
+                derniere_duree = None;
             }
         }
-        details_interface.duree_moyenne =
-            Some(somme_durees / details_interface.durees.len() as u32);
+
+        if None != derniere_duree {
+            details_interface.duree_moyenne =
+                Some(somme_durees / details_interface.durees.len() as u32);
+        } else {
+            details_interface.duree_moyenne = Some(duree_maximum);
+        }
 
         //Retirer les valeurs agées de 15 minutes ou plus
         for clef in clefs_a_retirer {
@@ -224,11 +238,11 @@ pub fn commuter_reseaux(routes: &[Route]) {
                 .output()
                 .unwrap();
 
-                println!(
-                    "supprimer route {:#?} {:?} ",
-                    String::from_utf8(commande.stderr).unwrap(),
-                    route
-                );
+            println!(
+                "supprimer route {:#?} {:?} ",
+                String::from_utf8(commande.stderr).unwrap(),
+                route
+            );
         }
 
         for route in routes {
@@ -255,11 +269,11 @@ pub fn commuter_reseaux(routes: &[Route]) {
                     .output()
                     .unwrap();
 
-                    println!(
-                        "ajouter route {:#?} {:?} ",
-                        String::from_utf8(commande.stderr).unwrap(),
-                        route
-                    );
+                println!(
+                    "ajouter route {:#?} {:?} ",
+                    String::from_utf8(commande.stderr).unwrap(),
+                    route
+                );
             }
         }
     }
