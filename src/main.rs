@@ -12,28 +12,21 @@ fn main() {
 
         for (interface, route) in &mut routes {
             let duree = gestionnaire_de_routes::tester_route(interface, &mut interfaces);
+   
+        }
+        gestionnaire_de_routes::calculer_duree_moyenne(&mut interfaces);
+        gestionnaire_de_routes::trier_routes(INTERFACE_PRIVILEGIEE,  routes, &mut interfaces);
+  
+        for (interface, route) in &mut routes {
             println!(
-                "Interface : '{}' Durée : {:?} Route : '{}'",
+                "Interface : '{}' Durée : {:?} Note : {:?} Route : '{}'",
                 interface,
                 duree.unwrap_or(Duration::new(0, 0)),
+                route.note
                 route.route
             );
-
-            for (_interface, details_interface) in &mut interfaces.liste_interfaces {
-                for (date, duree) in &mut details_interface.durees {
-                    println!(
-                        "Durée : {} {:?} {:?}",
-                        date,
-                        duree.unwrap_or(Duration::from_micros(0)),
-                        details_interface
-                            .duree_moyenne
-                            .unwrap_or(Duration::from_micros(0))
-                    );
-                }
-            }
         }
-        gestionnaire_de_routes::trier_routes(INTERFACE_PRIVILEGIEE,  routes, &mut interfaces);
-        gestionnaire_de_routes::calculer_duree_moyenne(&mut interfaces);
+
         thread::sleep(Duration::from_secs(5));
 
         n = n + 1;
