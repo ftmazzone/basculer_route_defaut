@@ -219,12 +219,11 @@ pub fn commuter_reseaux(routes: &[Route]) {
                 .output()
                 .unwrap();
 
-            println!(
-                "supprimer route {} {}",
-                String::from_utf8(commande.stdout).unwrap(),
-                String::from_utf8(commande.stderr).unwrap()
-            );
-            println!("supprimer route {:?} ", route);
+                println!(
+                    "supprimer route {:#?} {:?} ",
+                    String::from_utf8(commande.stderr).unwrap(),
+                    route
+                );
         }
 
         for route in routes {
@@ -251,12 +250,11 @@ pub fn commuter_reseaux(routes: &[Route]) {
                     .output()
                     .unwrap();
 
-                println!(
-                    "commuter_reseaux - ajouter route {} {}",
-                    String::from_utf8(commande.stdout).unwrap(),
-                    String::from_utf8(commande.stderr).unwrap()
-                );
-                println!("ajouter route {:?} ", route);
+                    println!(
+                        "ajouter route {:#?} {:?} ",
+                        String::from_utf8(commande.stderr).unwrap(),
+                        route
+                    );
             }
         }
     }
