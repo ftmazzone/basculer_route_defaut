@@ -28,13 +28,13 @@ fn main() {
         let  routes_triees =
             gestionnaire_de_routes::trier_routes(INTERFACE_PRIVILEGIEE, routes, &mut interfaces);
 
-        for route in &routes_triees {
-            let interface = interfaces.liste_interfaces.get(&route.interface);
-            println!(
-                "Interface : '{}' Métrique : '{:?}' Note : '{:?}' Durée moyenne : '{:?}' Métrique désirée : '{:?}' Route : '{}' ",
-                route.interface, route.metrique, route.note, interface.unwrap().duree_moyenne,route.metrique_desiree,route.route
-            );
-        }
+        // for route in &routes_triees {
+        //     let interface = interfaces.liste_interfaces.get(&route.interface);
+        //     println!(
+        //         "Interface : '{}' Métrique : '{:?}' Note : '{:?}' Durée moyenne : '{:?}' Métrique désirée : '{:?}' Route : '{}' ",
+        //         route.interface, route.metrique, route.note, interface.unwrap().duree_moyenne,route.metrique_desiree,route.route
+        //     );
+        // }
 
         gestionnaire_de_routes::commuter_reseaux(&routes_triees);
 

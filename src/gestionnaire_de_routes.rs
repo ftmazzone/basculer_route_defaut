@@ -10,10 +10,10 @@ use std::vec::Vec;
 #[derive(Debug, Clone)]
 pub struct Route {
     pub interface: String,
-    pub route: String,
     pub metrique: Option<i32>,
     pub note: Option<f32>,
     pub metrique_desiree: Option<i32>,
+    pub route: String,
 }
 
 impl Route {
@@ -199,53 +199,64 @@ pub fn trier_routes(
 }
 
 /// Reconfigurer les métriques pour chaque route si la valeur de la métrique désirée ne correspond pas à la métrique actuelle.
-pub fn commuter_reseaux(routes: &[ Route]) {
-     let mut commutation_necessaire = false;
+pub fn commuter_reseaux(routes: &[Route]) {
+    let mut commutation_necessaire = false;
 
-     for route in routes {
+    for route in routes {
         if route.metrique != route.metrique_desiree {
             commutation_necessaire = true;
             break;
         }
     }
-    
-    if commutation_necessaire {
 
-        for _route in routes {
-            let  commande = Command::new("ip")
-            .arg("route")
-            .arg("delete")
-            .arg("default")
-              .stdout(Stdio::piped())
-             .output()
-             .unwrap();
-     
-             println!("commuter_reseaux - supprimer route {} {}",String::from_utf8(commande.stdout).unwrap(),String::from_utf8(commande.stderr).unwrap());
+    if commutation_necessaire {
+        for route in routes {
+            let commande = Command::new("ip")
+                .arg("route")
+                .arg("delete")
+                .arg("default")
+                .stdout(Stdio::piped())
+                .output()
+                .unwrap();
+
+            println!(
+                "supprimer route {} {}",
+                String::from_utf8(commande.stdout).unwrap(),
+                String::from_utf8(commande.stderr).unwrap()
+            );
+            println!("supprimer route {:?} ", route);
         }
 
         for route in routes {
-            let regex = Regex::new(r"^default via ([0-9.]{7,15}) dev ([0-9a-z]{1,20}) proto .* metric [0-9]{1,10}.*").unwrap();
+            let regex = Regex::new(
+                r"^default via ([0-9.]{7,15}) dev ([0-9a-z]{1,20}) proto .* metric [0-9]{1,10}.*",
+            )
+            .unwrap();
             for element in regex.captures_iter(&route.route[..]) {
-
                 let adresse_passerelle = &element[1][..];
 
-                let  commande = Command::new("ip")
-                .arg("route")
-                .arg("add")
-                .arg("default")
-                .arg("via")
-                .arg(adresse_passerelle)
-                .arg("dev")
-                .arg(route.interface.to_owned())
-                .arg("proto")
-                .arg("dhcp")
-                .arg("metric")
-                .arg(route.metrique_desiree.unwrap_or(10000).to_string())
-                  .stdout(Stdio::piped())
-                 .output()
-                 .unwrap();
-         
-                 println!("commuter_reseaux - ajouter route {} {}",String::from_utf8(commande.stdout).unwrap(),String::from_utf8(commande.stderr).unwrap());
+                let commande = Command::new("ip")
+                    .arg("route")
+                    .arg("add")
+                    .arg("default")
+                    .arg("via")
+                    .arg(adresse_passerelle)
+                    .arg("dev")
+                    .arg(route.interface.to_owned())
+                    .arg("proto")
+                    .arg("dhcp")
+                    .arg("metric")
+                    .arg(route.metrique_desiree.unwrap_or(10000).to_string())
+                    .stdout(Stdio::piped())
+                    .output()
+                    .unwrap();
+
+                println!(
+                    "commuter_reseaux - ajouter route {} {}",
+                    String::from_utf8(commande.stdout).unwrap(),
+                    String::from_utf8(commande.stderr).unwrap()
+                );
+                println!("ajouter route {:?} ", route);
             }
         }
     }
