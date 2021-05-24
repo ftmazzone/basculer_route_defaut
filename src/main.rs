@@ -24,11 +24,10 @@ fn main() {
         // Tester pendant deux minutes les routes avant de réévaluer la meilleure route
         let mut i = 0;
         while i < 25 && running.load(Ordering::SeqCst) {
-            let mut index_interface = 0;
             for (interface, route) in &mut routes {
                 // Si la route actuelle n'est plus fonctionnelle : réévaluer la meilleure route sans attendre
                 if None == gestionnaire_de_routes::tester_route(interface, &mut interfaces)
-                    && index_interface == 0
+                    && route.metrique == Some(100)
                 {
                     i = 25;
                     println!(
@@ -36,7 +35,6 @@ fn main() {
                         route
                     );
                 } else {
-                    index_interface = index_interface + 1;
                     i = i + 1;
                 }
             }
