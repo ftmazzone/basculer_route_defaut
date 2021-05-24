@@ -18,6 +18,7 @@ fn main() {
     let mut n = 0;
     let mut interfaces = gestionnaire_de_routes::Interfaces::new();
 
+    //Tant que les signaux 'INT' et 'TERM' ne sont pas reçus
     while running.load(Ordering::SeqCst) {
         
         let mut routes = gestionnaire_de_routes::lister_routes();
