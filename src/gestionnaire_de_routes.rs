@@ -11,6 +11,7 @@ use std::vec::Vec;
 pub struct Route {
     pub interface: String,
     pub metrique: Option<i32>,
+    pub duree_moyenne: Option<Duration>,
     pub note: Option<f32>,
     pub metrique_desiree: Option<i32>,
     pub route: String,
@@ -21,6 +22,7 @@ impl Route {
         interface: String,
         route: String,
         metrique: Option<i32>,
+        duree_moyenne : Option<Duration>,
         note: Option<f32>,
         metrique_desiree: Option<i32>,
     ) -> Self {
@@ -28,6 +30,7 @@ impl Route {
             interface,
             route,
             metrique,
+            duree_moyenne,
             note,
             metrique_desiree,
         }
@@ -150,6 +153,7 @@ pub fn lister_routes() -> HashMap<String, Route> {
                         metrique,
                         None,
                         None,
+                        None,
                     ),
                 );
             }
@@ -176,6 +180,7 @@ pub fn trier_routes(
             //Vérifier que l'interface a une note
             if let Some(duree_moyenne) = interface_trouvee.duree_moyenne {
                 route.note = Some(100.0 / duree_moyenne.as_millis() as f32);
+                route.duree_moyenne = interface_trouvee.duree_moyenne;
 
                 //Si l'interface est l'interface est privilégiée, augmenter la note
                 if interface_trouvee.nom == interface_privilegiee {
