@@ -7,7 +7,7 @@ fn main() {
     let mut n = 0;
     let mut interfaces = gestionnaire_de_routes::Interfaces::new();
 
-    while n < 100 {
+    while n < 100000 {
         let mut routes = gestionnaire_de_routes::lister_routes();
 
         for (interface, route) in &mut routes {
