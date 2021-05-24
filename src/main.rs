@@ -21,7 +21,7 @@ fn main() {
             let interface = interfaces.liste_interfaces.get(&route.interface);
             println!(
                 "Interface : '{}' Métrique : '{:?}' Note : '{:?}' Route : '{}' Durée moyenne : '{:?}'",
-                route.interface, route.metrique, route.note, route.route,interface.unwrap().duree_moyenne.unwrap()
+                route.interface, route.metrique, route.note, route.route,interface.unwrap().duree_moyenne
             );
         }
 
