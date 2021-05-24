@@ -164,7 +164,7 @@ pub fn trier_routes(
         routes_triees.push(route);
     }
 
-    routes_triees.sort_by(|a, b| a.note.partial_cmp(&b.note).unwrap());
+    routes_triees.sort_by(|a, b| b.note.partial_cmp(&a.note).unwrap());
 
     //Attribuer les métriques
     let mut metrique = 100;
