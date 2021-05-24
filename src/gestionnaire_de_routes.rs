@@ -173,7 +173,5 @@ pub fn trier_routes(
         metrique = metrique+1;
     }
 
-    println!("coucou {:?}",  routes_triees);
-
     return routes_triees;
 }
