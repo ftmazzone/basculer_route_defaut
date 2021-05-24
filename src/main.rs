@@ -18,9 +18,10 @@ fn main() {
             gestionnaire_de_routes::trier_routes(INTERFACE_PRIVILEGIEE, routes, &mut interfaces);
 
         for route in routes_triees {
+            let interface = interfaces.liste_interfaces.get(&route.interface);
             println!(
-                "Interface : '{}' Métrique : {:?} Note : {:?} Route : '{}'",
-                route.interface, route.metrique, route.note, route.route
+                "Interface : '{}' Métrique : '{:?}' Note : '{:?}' Route : '{}' Durée moyenne : '{:?}'",
+                route.interface, route.metrique, route.note, route.route,interface.unwrap().duree_moyenne.unwrap()
             );
         }
 

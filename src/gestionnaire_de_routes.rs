@@ -157,7 +157,7 @@ pub fn trier_routes(
 
                 //Si l'interface est l'interface est privilégiée, augmenter la note
                 if interface_trouvee.nom == interface_privilegiee {
-                    route.note = Some(route.note.unwrap() * 2.0);
+                    route.note = Some(route.note.unwrap() * 5.0);
                 }
             }
         }
