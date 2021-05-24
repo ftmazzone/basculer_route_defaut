@@ -13,15 +13,23 @@ pub struct Route {
     pub route: String,
     pub metrique: Option<i32>,
     pub note: Option<f32>,
+    pub metrique_desiree: Option<i32>,
 }
 
 impl Route {
-    pub fn new(interface: String, route: String, metrique: Option<i32>, note: Option<f32>) -> Self {
+    pub fn new(
+        interface: String,
+        route: String,
+        metrique: Option<i32>,
+        note: Option<f32>,
+        metrique_desiree: Option<i32>,
+    ) -> Self {
         Self {
             interface,
             route,
             metrique,
             note,
+            metrique_desiree,
         }
     }
 }
@@ -124,11 +132,25 @@ pub fn lister_routes() -> HashMap<String, Route> {
 
     for route in routes_groupees.split("\n") {
         if route != "" {
-            let regex = Regex::new(r"^default .* dev (.*) proto .*").unwrap();
+            let regex =
+                Regex::new(r"^default .* dev (.*) proto .* metric ([0-9]{1,10}).*").unwrap();
             for cap in regex.captures_iter(route) {
+                let mut metrique = None;
+
+                match cap[2].parse::<i32>() {
+                    Ok(m) => metrique = Some(m),
+                    Err(e) => println!("Erreur lister_routes {}", e),
+                }
+
                 routes.insert(
                     cap[1].to_owned(),
-                    Route::new(cap[1].to_owned(), route.trim().to_owned(), None, None),
+                    Route::new(
+                        cap[1].to_owned(),
+                        route.trim().to_owned(),
+                        metrique,
+                        None,
+                        None,
+                    ),
                 );
             }
         }
@@ -167,11 +189,64 @@ pub fn trier_routes(
     routes_triees.sort_by(|a, b| b.note.partial_cmp(&a.note).unwrap());
 
     //Attribuer les métriques
-    let mut metrique = 100;
+    let mut metrique_desiree = 100;
     for mut route in &mut routes_triees {
-      route.metrique = Some(metrique);
-        metrique = metrique+1;
+        route.metrique_desiree = Some(metrique_desiree);
+        metrique_desiree = metrique_desiree + 1;
     }
 
     return routes_triees;
+}
+
+/// Reconfigurer les métriques pour chaque route si la valeur de la métrique désirée ne correspond pas à la métrique actuelle.
+pub fn commuter_reseaux(routes: &[ Route]) {
+     let mut commutation_necessaire = false;
+
+     for route in routes {
+        if route.metrique != route.metrique_desiree {
+            commutation_necessaire = true;
+            break;
+        }
+    }
+    
+    if commutation_necessaire {
+
+        for _route in routes {
+            let  commande = Command::new("ip")
+            .arg("route")
+            .arg("delete")
+            .arg("default")
+              .stdout(Stdio::piped())
+             .output()
+             .unwrap();
+     
+             println!("commuter_reseaux - supprimer route {} {}",String::from_utf8(commande.stdout).unwrap(),String::from_utf8(commande.stderr).unwrap());
+        }
+
+        for route in routes {
+            let regex = Regex::new(r"^default via ([0-9.]{7,15}) dev ([0-9a-z]{1,20}) proto .* metric [0-9]{1,10}.*").unwrap();
+            for element in regex.captures_iter(&route.route[..]) {
+
+                let adresse_passerelle = &element[1][..];
+
+                let  commande = Command::new("ip")
+                .arg("route")
+                .arg("add")
+                .arg("default")
+                .arg("via")
+                .arg(adresse_passerelle)
+                .arg("dev")
+                .arg(route.interface.to_owned())
+                .arg("proto")
+                .arg("dhcp")
+                .arg("metric")
+                .arg(route.metrique_desiree.unwrap_or(10000).to_string())
+                  .stdout(Stdio::piped())
+                 .output()
+                 .unwrap();
+         
+                 println!("commuter_reseaux - ajouter route {} {}",String::from_utf8(commande.stdout).unwrap(),String::from_utf8(commande.stderr).unwrap());
+            }
+        }
+    }
 }
