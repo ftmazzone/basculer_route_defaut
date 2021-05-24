@@ -10,10 +10,10 @@ fn main() {
             let mut routes = gestionnaire_de_routes::lister_routes();
 
         for (interface, route) in &mut routes {
-            route.duree = Some(gestionnaire_de_routes::tester_route(
+            route.duree = gestionnaire_de_routes::tester_route(
                 interface,
                 &mut interfaces,
-            ));
+            );
             println!(
                 "Interface : '{}' Durée : {:?} Route : '{}'",
                 interface,

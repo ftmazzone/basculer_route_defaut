@@ -24,7 +24,7 @@ impl Route {
 
 pub struct Interface {
     pub interface: String,
-    pub durees: BTreeMap<DateTime<Local>, Duration>,
+    pub durees: BTreeMap<DateTime<Local>, Option<Duration>>,
     pub duree_moyenne: Option<Duration>,
 }
 
@@ -33,7 +33,7 @@ impl Interface {
         Self {
             interface,
             durees: BTreeMap::new(),
-            duree_moyenne: None
+            duree_moyenne: None,
         }
     }
 }
@@ -52,7 +52,7 @@ impl Interfaces {
 
 /// Valider si la route est fonctionnelle et calculer la durée d'une requête ICMP.
 /// Si la route n'est pas fonctionnelle, la durée retournée est de 1000 secondes.
-pub fn tester_route(interface: &String, interfaces: &mut Interfaces) -> Duration {
+pub fn tester_route(interface: &String, interfaces: &mut Interfaces) -> Option<Duration> {
     let commande = Command::new("ping")
         .arg("-c 1")
         .arg("-w 5")
@@ -64,12 +64,15 @@ pub fn tester_route(interface: &String, interfaces: &mut Interfaces) -> Duration
 
     let resultat_commande = String::from_utf8(commande.stdout).unwrap();
 
-    let mut duree: Duration = Duration::from_secs(1000);
+    let mut duree: Option<Duration> = None;
     let regex = Regex::new(r"icmp_seq=1 ttl=[0-9]{1,100} time=([0-9.]{1,100}) ms").unwrap();
     for element in regex.captures_iter(&resultat_commande) {
-        //microsecondes
-        let duree_us = element[1].parse::<f32>().unwrap() * 1000.0;
-        duree = Duration::from_micros(duree_us as u64);
+        match element[1].parse::<f32>() {
+            Ok(duree_ms) => {
+                duree = Some(Duration::from_micros((duree_ms * 1000.0) as u64));
+            }
+            Err(e) => println!("Erreur tester_route {}", e),
+        }
     }
 
     let interface_a_mettre_a_jour = interfaces
@@ -82,19 +85,21 @@ pub fn tester_route(interface: &String, interfaces: &mut Interfaces) -> Duration
 
 /// Calculer la durée moyenne des requêtes ICMP des interfaces et retirer les valeurs les plus obsolètes.
 pub fn calculer_duree_moyenne(interfaces: &mut Interfaces) {
-
-        for (_interface, details_interface) in &mut interfaces.liste_interfaces {
+    for (_interface, details_interface) in &mut interfaces.liste_interfaces {
         let mut clefs_a_retirer = HashSet::new();
-        let mut somme_durees = Duration::new(0,0);
+        let mut somme_durees = Duration::new(0, 0);
 
-       
-        for (&clef,  valeur) in &mut  details_interface.durees {
-            if Local::now().signed_duration_since(clef) > chrono::Duration::minutes(15){
+        for (&clef, valeur) in &mut details_interface.durees {
+            if Local::now().signed_duration_since(clef) > chrono::Duration::minutes(15) {
                 clefs_a_retirer.insert(clef);
             }
-            somme_durees = somme_durees + *valeur;
+            match *valeur {
+                Some(x) => somme_durees = somme_durees + x,
+                None => somme_durees = somme_durees + Duration::from_secs(5),
+            }
         }
-        details_interface.duree_moyenne = Some(somme_durees/details_interface.durees.len() as u32);
+        details_interface.duree_moyenne =
+            Some(somme_durees / details_interface.durees.len() as u32);
 
         //Retirer les valeurs agées de 15 minutes ou plus
         for clef in clefs_a_retirer {
