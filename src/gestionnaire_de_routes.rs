@@ -3,35 +3,39 @@ use regex::Regex;
 use std::collections::{BTreeMap, HashMap, HashSet};
 use std::process::{Command, Stdio};
 use std::time::Duration;
+use std::vec::Vec;
 
 //dbg!(routes_groupees.clone());
 
+#[derive(Debug, Clone)]
 pub struct Route {
     pub interface: String,
-    pub duree: Option<Duration>,
     pub route: String,
+    pub metrique: Option<i32>,
+    pub note: Option<f32>,
 }
 
 impl Route {
-    pub fn new(interface: String, route: String, duree: Option<Duration>) -> Self {
+    pub fn new(interface: String, route: String, metrique: Option<i32>, note: Option<f32>) -> Self {
         Self {
             interface,
             route,
-            duree: duree,
+            metrique,
+            note,
         }
     }
 }
 
 pub struct Interface {
-    pub interface: String,
+    pub nom: String,
     pub durees: BTreeMap<DateTime<Local>, Option<Duration>>,
     pub duree_moyenne: Option<Duration>,
 }
 
 impl Interface {
-    pub fn new(interface: String) -> Self {
+    pub fn new(nom: String) -> Self {
         Self {
-            interface,
+            nom,
             durees: BTreeMap::new(),
             duree_moyenne: None,
         }
@@ -124,10 +128,52 @@ pub fn lister_routes() -> HashMap<String, Route> {
             for cap in regex.captures_iter(route) {
                 routes.insert(
                     cap[1].to_owned(),
-                    Route::new(cap[1].to_owned(), route.trim().to_owned(), None),
+                    Route::new(cap[1].to_owned(), route.trim().to_owned(), None, None),
                 );
             }
         }
     }
     return routes;
+}
+
+///Trier les routes.
+pub fn trier_routes(
+    interface_privilegiee: &str,
+    routes: HashMap<String, Route>,
+    interfaces: &mut Interfaces,
+) -> Vec<Route> {
+    let mut routes_triees = Vec::new();
+
+    for (interface, mut route) in routes {
+        let interface_trouvee;
+
+        //Vérifier que l'interface est listée.
+        if let Some(i) = interfaces.liste_interfaces.get(&interface) {
+            interface_trouvee = i;
+
+            //Vérifier que l'interface a une note
+            if let Some(duree_moyenne) = interface_trouvee.duree_moyenne {
+                route.note = Some(100.0 / duree_moyenne.as_millis() as f32);
+
+                //Si l'interface est l'interface est privilégiée, augmenter la note
+                if interface_trouvee.nom == interface_privilegiee {
+                    route.note = Some(route.note.unwrap() * 2.0);
+                }
+            }
+        }
+        routes_triees.push(route);
+    }
+
+    routes_triees.sort_by(|a, b| b.note.partial_cmp(&a.note).unwrap());
+
+    //Attribuer les métriques
+    let mut metrique = 100;
+    for mut route in &mut routes_triees {
+      route.metrique = Some(metrique);
+        metrique = metrique+1;
+    }
+
+    println!("coucou {:?}",  routes_triees);
+
+    return routes_triees;
 }
