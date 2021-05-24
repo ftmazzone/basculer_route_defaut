@@ -21,6 +21,7 @@ version = "0.1.0"
 dependencies = [
  "chrono",
  "regex",
+ "simple-signal",
 ]
 
 [[package]]
@@ -35,6 +36,12 @@ dependencies = [
  "time",
  "winapi",
 ]
+
+[[package]]
+name = "lazy_static"
+version = "1.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e2abad23fbc42b3700f2f279844dc832adb2b2eb069b2df918f455c4e18cc646"
 
 [[package]]
 name = "libc"
@@ -83,6 +90,16 @@ name = "regex-syntax"
 version = "0.6.25"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f497285884f3fcff424ffc933e56d7cbca511def0c9831a7f9b5f6153e3cc89b"
+
+[[package]]
+name = "simple-signal"
+version = "1.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "53f7da44adcc42667d57483bd93f81295f27d66897804b757573b61b6f13288b"
+dependencies = [
+ "lazy_static",
+ "libc",
+]
 
 [[package]]
 name = "time"

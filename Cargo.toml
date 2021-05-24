@@ -10,3 +10,4 @@ license = "MIT"
 [dependencies]
 regex = "1"
 chrono = "0"
+simple-signal="1"
