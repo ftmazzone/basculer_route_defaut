@@ -78,9 +78,10 @@ pub fn verifier_connectivite_interfaces(
     let mut debut_test = Some(Instant::now());
     loop {
         for (interface, route) in  routes {
-            // Si la route actuelle n'est plus fonctionnelle : réévaluer la meilleure route sans attendre
+            // Si la route actuelle n'est plus fonctionnelle (2 tests) : réévaluer la meilleure route sans attendre
             if None == verifier_connectivite_interface(&interface,  interfaces)
                 && route.metrique == Some(100)
+                && None == verifier_connectivite_interface(&interface,  interfaces)
             {
                 debut_test = None;
                 println!(
