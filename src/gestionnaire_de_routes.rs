@@ -1,9 +1,11 @@
 use chrono::{DateTime, Local};
 use regex::Regex;
+use std::vec::Vec;
 use std::collections::{BTreeMap, HashMap, HashSet};
 use std::process::{Command, Stdio};
-use std::time::Duration;
-use std::vec::Vec;
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::Arc;
+use std::{thread, time::Duration, time::Instant};
 
 static DUREE_ATTENTE_MAXIMUM_SECONDES: u64 = 5;
 
@@ -67,9 +69,44 @@ impl Interfaces {
     }
 }
 
-/// Valider si la route est fonctionnelle et calculer la durée d'une requête ICMP.
+/// Tester pendant cinq minutes les routes avant de réévaluer la meilleure route
+pub fn verifier_connectivite_interfaces(
+    running: &Arc<AtomicBool>,
+    routes: &HashMap<String, Route>,
+    interfaces: &mut Interfaces,
+) {
+    let mut debut_test = Some(Instant::now());
+    loop {
+        for (interface, route) in  routes {
+            // Si la route actuelle n'est plus fonctionnelle : réévaluer la meilleure route sans attendre
+            if None == verifier_connectivite_interface(&interface,  interfaces)
+                && route.metrique == Some(100)
+            {
+                debut_test = None;
+                println!(
+                    "L'interface par défaut principale n'est pas fonctionnelle. {:?}",
+                    route
+                );
+            }
+        }
+        
+        if None != debut_test
+            && (Instant::now() - debut_test.unwrap()) < Duration::from_secs(300)
+            && running.load(Ordering::SeqCst)
+        {
+            thread::sleep(Duration::from_secs(5));
+        } else {
+            break;
+        }
+    }
+}
+
+/// Vérifier que la c est fonctionnelle et calculer la durée d'une requête ICMP.
 /// Si la route n'est pas fonctionnelle, la durée retournée est de 1000 secondes.
-pub fn tester_route(interface: &String, interfaces: &mut Interfaces) -> Option<Duration> {
+pub fn verifier_connectivite_interface(
+    interface: &String,
+    interfaces: &mut Interfaces,
+) -> Option<Duration> {
     let commande = Command::new("ping")
         .arg("-c 1")
         .arg("-w 5")

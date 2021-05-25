@@ -19,28 +19,8 @@ fn main() {
 
     //Tant que les signaux 'INT' et 'TERM' ne sont pas reçus
     while running.load(Ordering::SeqCst) {
-        let mut routes = gestionnaire_de_routes::lister_routes();
-
-        // Tester pendant deux minutes les routes avant de réévaluer la meilleure route
-        let mut i = 0;
-        while i < 25 && running.load(Ordering::SeqCst) {
-            for (interface, route) in &mut routes {
-                // Si la route actuelle n'est plus fonctionnelle : réévaluer la meilleure route sans attendre
-                if None == gestionnaire_de_routes::tester_route(interface, &mut interfaces)
-                    && route.metrique == Some(100)
-                {
-                    i = 25;
-                    println!(
-                        "L'interface par défaut principale n'est pas fonctionnelle. {:?}",
-                        route
-                    );
-                } else {
-                    i = i + 1;
-                }
-            }
-            thread::sleep(Duration::from_secs(5));
-        }
-
+        let  routes = gestionnaire_de_routes::lister_routes();
+        gestionnaire_de_routes::verifier_connectivite_interfaces(&running,&routes,&mut interfaces);
         gestionnaire_de_routes::calculer_duree_moyenne(&mut interfaces);
         let routes_triees =
             gestionnaire_de_routes::trier_routes(INTERFACE_PRIVILEGIEE, routes, &mut interfaces);
