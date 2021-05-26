@@ -54,14 +54,14 @@ fn main() {
             let interface = interfaces.liste_interfaces.get(&route.interface);
 
             let nom_interface = route.interface.to_owned();
-            let metrique = route.metrique.formater_option();
-            let note = route.note.formater_option();
+            let metrique = route.metrique.formater();
+            let note = route.note.formater();
             let duree_moyenne;
             match interface {
-                Some(i) => duree_moyenne = i.duree_moyenne.formater_option(),
+                Some(i) => duree_moyenne = i.duree_moyenne.formater(),
                 None => duree_moyenne = String::new(),
             }
-            let metrique_desiree = route.metrique_desiree.formater_option();
+            let metrique_desiree = route.metrique_desiree.formater();
             let details = route.route.to_owned();
 
             dbg!(
