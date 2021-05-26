@@ -216,7 +216,7 @@ pub fn lister_routes() -> HashMap<String, Route> {
 
 ///Trier les routes.
 pub fn trier_routes(
-    interface_privilegiee: &str,
+    interface_privilegiee: String,
     routes: HashMap<String, Route>,
     interfaces: &mut Interfaces,
 ) -> Vec<Route> {
