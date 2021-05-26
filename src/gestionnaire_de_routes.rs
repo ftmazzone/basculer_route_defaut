@@ -1,10 +1,10 @@
 use chrono::{DateTime, Local};
 use regex::Regex;
-use std::vec::Vec;
 use std::collections::{BTreeMap, HashMap, HashSet};
 use std::process::{Command, Stdio};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
+use std::vec::Vec;
 use std::{thread, time::Duration, time::Instant};
 
 static DUREE_ATTENTE_MAXIMUM_SECONDES: u64 = 5;
@@ -69,19 +69,28 @@ impl Interfaces {
     }
 }
 
-/// Tester pendant cinq minutes les routes avant de réévaluer la meilleure route
+/// Tester pendant la dureée spécifiée les routes avant de réévaluer la meilleure route
+/// Si aucune durée n'est spécifiée, la valeur par défaut est 300 secondes.
 pub fn verifier_connectivite_interfaces(
     running: &Arc<AtomicBool>,
     routes: &HashMap<String, Route>,
     interfaces: &mut Interfaces,
+    duree:  Option<Duration>
 ) {
+
+    let duree_verification:Duration;
+    match duree{
+        Some(dv)=>duree_verification=dv,
+        None => duree_verification=Duration::from_secs(300)
+    }
+
     let mut debut_test = Some(Instant::now());
     loop {
-        for (interface, route) in  routes {
+        for (interface, route) in routes {
             // Si la route actuelle n'est plus fonctionnelle (2 tests) : réévaluer la meilleure route sans attendre
-            if None == verifier_connectivite_interface(&interface,  interfaces)
+            if None == verifier_connectivite_interface(&interface, interfaces)
                 && route.metrique == Some(100)
-                && None == verifier_connectivite_interface(&interface,  interfaces)
+                && None == verifier_connectivite_interface(&interface, interfaces)
             {
                 debut_test = None;
                 println!(
@@ -90,9 +99,8 @@ pub fn verifier_connectivite_interfaces(
                 );
             }
         }
-        
         if None != debut_test
-            && (Instant::now() - debut_test.unwrap()) < Duration::from_secs(300)
+            && (Instant::now() - debut_test.unwrap()) < duree_verification
             && running.load(Ordering::SeqCst)
         {
             thread::sleep(Duration::from_secs(5));
@@ -116,6 +124,13 @@ pub fn verifier_connectivite_interface(
         .stdout(Stdio::piped())
         .output()
         .unwrap();
+
+    if commande.stderr.len() != 0 {
+        eprintln!(
+            "verifier_connectivite_interface erreur : '{}'",
+            String::from_utf8(commande.stderr).unwrap_or_default(),
+        );
+    }
 
     let resultat_commande = String::from_utf8(commande.stdout).unwrap();
 
@@ -177,11 +192,22 @@ pub fn calculer_duree_moyenne(interfaces: &mut Interfaces) {
 
 /// Lister les routes par défaut.
 pub fn lister_routes() -> HashMap<String, Route> {
-    let mut liste_routes = Command::new("ip");
-    liste_routes.arg("route").arg("show").arg("default");
+    let commande = Command::new("ip")
+        .arg("route")
+        .arg("show")
+        .arg("default")
+        .stdout(Stdio::piped())
+        .output()
+        .unwrap();
 
-    let routes = liste_routes.output().expect("process failed to execute");
-    let routes_groupees = String::from_utf8(routes.stdout).unwrap();
+    if commande.stderr.len() != 0 {
+        eprintln!(
+            "lister_routes erreur : '{}'",
+            String::from_utf8(commande.stderr).unwrap_or_default(),
+        );
+    }
+
+    let routes_groupees = String::from_utf8(commande.stdout).unwrap();
 
     let mut routes = HashMap::new();
 
@@ -276,11 +302,12 @@ pub fn commuter_reseaux(routes: &[Route]) {
                 .output()
                 .unwrap();
 
-            println!(
-                "supprimer route {:#?} {:?} ",
-                String::from_utf8(commande.stderr).unwrap(),
-                route
-            );
+            let mut erreur = String::new();
+            if commande.stderr.len() != 0 {
+                erreur = String::from_utf8(commande.stderr).unwrap_or_default();
+            }
+
+            println!("supprimer route {} {:?} ", erreur, route);
         }
 
         for route in routes {
@@ -307,11 +334,12 @@ pub fn commuter_reseaux(routes: &[Route]) {
                     .output()
                     .unwrap();
 
-                println!(
-                    "ajouter route {:#?} {:?} ",
-                    String::from_utf8(commande.stderr).unwrap(),
-                    route
-                );
+                let mut erreur = String::new();
+                if commande.stderr.len() != 0 {
+                    erreur = String::from_utf8(commande.stderr).unwrap_or_default();
+                }
+
+                println!("ajouter route {} {:?} ", erreur, route);
             }
         }
     }
