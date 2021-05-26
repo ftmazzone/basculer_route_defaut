@@ -20,12 +20,10 @@ fn main() {
     match env::var("INTERFACE_PRIVILEGIEE") {
         Ok(valeur) => interface_privilegiee = valeur.to_string(),
         Err(e) => {
-            if e == std::env::VarError::NotPresent {
-                interface_privilegiee = String::from(INTERFACE_PRIVILEGIEE);
-            } else {
+            if e != std::env::VarError::NotPresent {
                 eprintln!("Interface privilégiée non reconnue : '{}'", e);
-                interface_privilegiee = String::from(INTERFACE_PRIVILEGIEE);
             }
+            interface_privilegiee = String::from(INTERFACE_PRIVILEGIEE);
         }
     }
     println!("Interface privilégiée : {}", interface_privilegiee);
