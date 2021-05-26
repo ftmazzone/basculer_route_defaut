@@ -8,6 +8,7 @@ use std::vec::Vec;
 use std::{thread, time::Duration, time::Instant};
 
 static DUREE_ATTENTE_MAXIMUM_SECONDES: u64 = 5;
+static DUREE_VERIFICATION_CONNECTIVITE_INTERFACES_SECONDES: u64 = 300;
 
 //dbg!(routes_groupees.clone());
 
@@ -75,13 +76,15 @@ pub fn verifier_connectivite_interfaces(
     running: &Arc<AtomicBool>,
     routes: &HashMap<String, Route>,
     interfaces: &mut Interfaces,
-    duree:  Option<Duration>
+    duree: Option<Duration>,
 ) {
-
-    let duree_verification:Duration;
-    match duree{
-        Some(dv)=>duree_verification=dv,
-        None => duree_verification=Duration::from_secs(300)
+    let duree_verification: Duration;
+    match duree {
+        Some(dv) => duree_verification = dv,
+        None => {
+            duree_verification =
+                Duration::from_secs(DUREE_VERIFICATION_CONNECTIVITE_INTERFACES_SECONDES)
+        }
     }
 
     let mut debut_test = Some(Instant::now());
