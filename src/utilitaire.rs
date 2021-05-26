@@ -9,7 +9,7 @@ impl FormateurOption for Option<i32> {
         let valeur_formatee: String;
         match self {
             None => valeur_formatee = String::new(),
-            Some(v) => valeur_formatee = format!("{:?}", v),
+            Some(v) => valeur_formatee = format!("{}", v),
         }
         return valeur_formatee;
     }
@@ -20,7 +20,7 @@ impl FormateurOption for Option<f32> {
         let valeur_formatee: String;
         match self {
             None => valeur_formatee = String::new(),
-            Some(v) => valeur_formatee = format!("{:?}", v),
+            Some(v) => valeur_formatee = format!("{}", v),
         }
         return valeur_formatee;
     }
