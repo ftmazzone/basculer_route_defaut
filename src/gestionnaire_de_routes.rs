@@ -331,24 +331,35 @@ pub fn commuter_reseaux(routes: &[Route]) {
 
         for route in routes {
             let regex = Regex::new(
-                r"^default via ([0-9.]{7,15}) dev ([0-9a-z]{1,20}) proto .* metric [0-9]{1,10}.*",
+                r"^default via ([0-9.]{7,15}) dev ([0-9a-z]{1,20}) proto dhcp(?: src ([0-9.]{7,15}))? metric [0-9]{1,10}.*",
             )
             .unwrap();
             for element in regex.captures_iter(&route.route[..]) {
-                let adresse_passerelle = &element[1][..];
+                let adresse_passerelle = &element[1];
+                let metrique_desiree = &route.metrique_desiree.unwrap_or(10000).to_string();
+
+                let mut parametres = vec![
+                    "route",
+                    "add",
+                    "default",
+                    "via",
+                    adresse_passerelle,
+                    "dev",
+                    &route.interface[..],
+                    "proto",
+                    "dhcp",
+                ];
+
+                if element.len() == 3 {
+                    let src = &element[3];
+                    parametres.push("src");
+                    parametres.push(src);
+                }
+                parametres.push("metric");
+                parametres.push(metrique_desiree);
 
                 let commande = Command::new("ip")
-                    .arg("route")
-                    .arg("add")
-                    .arg("default")
-                    .arg("via")
-                    .arg(adresse_passerelle)
-                    .arg("dev")
-                    .arg(route.interface.to_owned())
-                    .arg("proto")
-                    .arg("dhcp")
-                    .arg("metric")
-                    .arg(route.metrique_desiree.unwrap_or(10000).to_string())
+                    .args(parametres)
                     .stdout(Stdio::piped())
                     .output()
                     .unwrap();
