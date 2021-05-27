@@ -301,7 +301,7 @@ pub fn trier_routes(
 }
 
 /// Reconfigurer les métriques pour chaque route si la valeur de la métrique désirée ne correspond pas à la métrique actuelle.
-pub fn commuter_reseaux(routes: &[Route]) {
+pub fn commuter_reseaux(routes: &Vec<Route>) {
     let mut commutation_necessaire = false;
 
     for route in routes {
@@ -350,7 +350,7 @@ pub fn commuter_reseaux(routes: &[Route]) {
                     "dhcp",
                 ];
 
-                if element.len() == 3 {
+                if element.get(3) != None {
                     let src = &element[3];
                     parametres.push("src");
                     parametres.push(src);
