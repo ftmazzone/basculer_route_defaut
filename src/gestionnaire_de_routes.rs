@@ -5,7 +5,10 @@ use std::process::{Command, Stdio};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::vec::Vec;
-use std::{thread, time::Duration, time::Instant};
+use std::{fmt, thread, time::Duration, time::Instant};
+
+use crate::utilitaire;
+use utilitaire::FormateurOption;
 
 static DUREE_ATTENTE_MAXIMUM_SECONDES: u64 = 5;
 static DUREE_VERIFICATION_CONNECTIVITE_INTERFACES_SECONDES: u64 = 300;
@@ -39,6 +42,19 @@ impl Route {
             note,
             metrique_desiree,
         }
+    }
+}
+
+impl fmt::Display for Route {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let nom_interface = self.interface.to_owned();
+        let metrique = self.metrique.formater();
+        let note = self.note.formater();
+        let duree_moyenne = self.duree_moyenne.formater();
+        let metrique_desiree = self.metrique_desiree.formater();
+        let details = self.route.to_owned();
+        write!(f, "Interface : {} Métrique : {} Note : {} Durée moyenne : {} Métrique désirée : {} Détails : {}",
+         nom_interface,metrique,note,duree_moyenne,metrique_desiree,details)
     }
 }
 
@@ -97,7 +113,7 @@ pub fn verifier_connectivite_interfaces(
             {
                 debut_test = None;
                 println!(
-                    "L'interface par défaut principale n'est pas fonctionnelle. {:?}",
+                    "L'interface par défaut principale n'est pas fonctionnelle. {}",
                     route
                 );
             }
@@ -310,7 +326,7 @@ pub fn commuter_reseaux(routes: &[Route]) {
                 erreur = String::from_utf8(commande.stderr).unwrap_or_default();
             }
 
-            println!("supprimer route {} {:?} ", erreur, route);
+            println!("supprimer route {} {} ", erreur, route);
         }
 
         for route in routes {
@@ -342,7 +358,7 @@ pub fn commuter_reseaux(routes: &[Route]) {
                     erreur = String::from_utf8(commande.stderr).unwrap_or_default();
                 }
 
-                println!("ajouter route {} {:?} ", erreur, route);
+                println!("ajouter route {} {} ", erreur, route);
             }
         }
     }
