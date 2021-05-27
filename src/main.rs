@@ -56,8 +56,8 @@ fn main() {
             &running,
             &routes,
             &mut interfaces,
-           // None,
-            Some(Duration::from_secs(10)),
+            None,
+            // Some(Duration::from_secs(10)),
         );
         gestionnaire_de_routes::calculer_duree_moyenne(&mut interfaces);
         let routes_triees = gestionnaire_de_routes::trier_routes(
