@@ -1,7 +1,9 @@
 use chrono::{DateTime, Local};
 use regex::Regex;
 use std::collections::{BTreeMap, HashMap, HashSet};
+use std::net::{IpAddr,Ipv6Addr};
 use std::process::{Command, Stdio};
+use std::str::FromStr;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::vec::Vec;
@@ -18,17 +20,19 @@ static DUREE_VERIFICATION_CONNECTIVITE_INTERFACES_SECONDES: u64 = 300;
 #[derive(Debug, Clone)]
 pub struct Route {
     pub interface: String,
+    pub src: Option<IpAddr>,
+    pub adresse_passerelle: IpAddr,
     pub metrique: Option<i32>,
     pub duree_moyenne: Option<Duration>,
     pub note: Option<f32>,
     pub metrique_desiree: Option<i32>,
-    pub route: String,
 }
 
 impl Route {
     pub fn new(
         interface: String,
-        route: String,
+        src: Option<IpAddr>,
+        adresse_passerelle: IpAddr,
         metrique: Option<i32>,
         duree_moyenne: Option<Duration>,
         note: Option<f32>,
@@ -36,7 +40,8 @@ impl Route {
     ) -> Self {
         Self {
             interface,
-            route,
+            src,
+            adresse_passerelle,
             metrique,
             duree_moyenne,
             note,
@@ -48,16 +53,18 @@ impl Route {
 impl fmt::Display for Route {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let nom_interface = self.interface.to_owned();
+        let src = self.src.formater();
+        let adresse_passerelle = self.adresse_passerelle.to_string();
         let metrique = self.metrique.formater();
         let note = self.note.formater();
         let duree_moyenne = self.duree_moyenne.formater();
         let metrique_desiree = self.metrique_desiree.formater();
-        let details = self.route.to_owned();
-        write!(f, "Interface : {} Métrique : {} Note : {} Durée moyenne : {} Métrique désirée : {} Détails : {}",
-         nom_interface,metrique,note,duree_moyenne,metrique_desiree,details)
+        write!(f, "Interface : {} Source : {} Adresse de la passerelle : {} Métrique : {} Note : {} Durée moyenne : {} Métrique désirée : {}",
+         nom_interface,src,adresse_passerelle,metrique,note,duree_moyenne,metrique_desiree)
     }
 }
 
+#[derive(Debug, Clone)]
 pub struct Interface {
     pub nom: String,
     pub durees: BTreeMap<DateTime<Local>, Option<Duration>>,
@@ -71,6 +78,21 @@ impl Interface {
             durees: BTreeMap::new(),
             duree_moyenne: None,
         }
+    }
+}
+
+impl fmt::Display for Interface {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let nom_interface = self.nom.to_owned();
+        let duree_moyenne = self.duree_moyenne.formater();
+        let nombre_mesures = self.durees.len();
+        write!(
+            f,
+            "Interface : {} Durée moyenne : {} Nombre de mesures : {}",
+            nom_interface,
+            duree_moyenne,
+            nombre_mesures
+        )
     }
 }
 
@@ -233,20 +255,38 @@ pub fn lister_routes() -> HashMap<String, Route> {
     for route in routes_groupees.split("\n") {
         if route != "" {
             let regex =
-                Regex::new(r"^default .* dev (.*) proto .* metric ([0-9]{1,10}).*").unwrap();
-            for cap in regex.captures_iter(route) {
+                Regex::new(   r"^default via ([0-9.]{7,15}) dev ([0-9a-z]{1,20}) proto dhcp(?: src ([0-9.]{7,15}))? metric ([0-9]{1,10}).*")
+                .unwrap();
+
+            for element in regex.captures_iter(route) {
+                let mut adresse_passerelle=IpAddr::V6(Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, 1));
+                let interface: &str;
+                let mut src = None;
                 let mut metrique = None;
 
-                match cap[2].parse::<i32>() {
-                    Ok(m) => metrique = Some(m),
+                match IpAddr::from_str(&element[1]) {
+                    Ok(a) => adresse_passerelle = a,
                     Err(e) => println!("Erreur lister_routes {}", e),
                 }
 
+                interface = &element[2];
+
+                if element.get(3) != None {
+                    match IpAddr::from_str(&element[3]) {
+                        Ok(a) => src = Some(a),
+                        Err(e) => println!("Erreur lister_routes {}", e),
+                    };
+                }
+                match element[4].parse::<i32>() {
+                    Ok(m) => metrique = Some(m),
+                    Err(e) => println!("Erreur lister_routes {}", e),
+                }
                 routes.insert(
-                    cap[1].to_owned(),
+                    interface.to_owned(),
                     Route::new(
-                        cap[1].to_owned(),
-                        route.trim().to_owned(),
+                        interface.to_owned(),
+                        src,
+                        adresse_passerelle,
                         metrique,
                         None,
                         None,
@@ -311,12 +351,14 @@ pub fn commuter_reseaux(routes: &Vec<Route>) {
         }
     }
 
-    if commutation_necessaire {
-        for route in routes {
-            let commande = Command::new("ip")
-                .arg("route")
-                .arg("delete")
-                .arg("default")
+     if commutation_necessaire {
+         for route in routes {
+             let commande = Command::new("ip")
+                 .arg("route")
+                 .arg("delete")
+                 .arg("default")
+                 .arg("via")
+                 .arg(&route.adresse_passerelle.to_string())
                 .stdout(Stdio::piped())
                 .output()
                 .unwrap();
@@ -330,13 +372,10 @@ pub fn commuter_reseaux(routes: &Vec<Route>) {
         }
 
         for route in routes {
-            let regex = Regex::new(
-                r"^default via ([0-9.]{7,15}) dev ([0-9a-z]{1,20}) proto dhcp(?: src ([0-9.]{7,15}))? metric [0-9]{1,10}.*",
-            )
-            .unwrap();
-            for element in regex.captures_iter(&route.route[..]) {
-                let adresse_passerelle = &element[1];
-                let metrique_desiree = &route.metrique_desiree.unwrap_or(10000).to_string();
+          
+            let adresse_passerelle = &route.adresse_passerelle.to_string();
+            let metrique_desiree =&route.metrique_desiree.unwrap_or(10000).to_string();
+            let src:String;
 
                 let mut parametres = vec![
                     "route",
@@ -350,10 +389,10 @@ pub fn commuter_reseaux(routes: &Vec<Route>) {
                     "dhcp",
                 ];
 
-                if element.get(3) != None {
-                    let src = &element[3];
+                if  let Some(source) = route.src {
+                     src = source.to_string();
                     parametres.push("src");
-                    parametres.push(src);
+                    parametres.push(&src);
                 }
                 parametres.push("metric");
                 parametres.push(metrique_desiree);
@@ -370,7 +409,7 @@ pub fn commuter_reseaux(routes: &Vec<Route>) {
                 }
 
                 println!("ajouter route {} {} ", erreur, route);
-            }
-        }
-    }
+        
+         }
+     }
 }

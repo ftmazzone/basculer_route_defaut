@@ -22,8 +22,6 @@ use std::{thread, time::Duration};
 mod gestionnaire_de_routes;
 mod utilitaire;
 
-use utilitaire::FormateurOption;
-
 static INTERFACE_PRIVILEGIEE: &str = "eth0";
 
 fn main() {
@@ -56,8 +54,8 @@ fn main() {
             &running,
             &routes,
             &mut interfaces,
-            None,
-            // Some(Duration::from_secs(10)),
+             None,
+           // Some(Duration::from_secs(10)),
         );
         gestionnaire_de_routes::calculer_duree_moyenne(&mut interfaces);
         let routes_triees = gestionnaire_de_routes::trier_routes(
@@ -78,22 +76,10 @@ fn main() {
 
 fn afficher_routes(routes: &Vec<Route>, interfaces: &Interfaces) {
     for route in routes {
-        let interface = interfaces.liste_interfaces.get(&route.interface);
-
-        let nom_interface = route.interface.to_owned();
-        let metrique = route.metrique.formater();
-        let note = route.note.formater();
-        let duree_moyenne;
-        match interface {
-            Some(i) => duree_moyenne = i.duree_moyenne.formater(),
-            None => duree_moyenne = String::new(),
+        dbg!(route);
+        if let Some(interface) = interfaces.liste_interfaces.get(&route.interface) {
+            let informations_interface = format!("{}",interface);
+            dbg!(  informations_interface);
         }
-        let metrique_desiree = route.metrique_desiree.formater();
-        let details = route.route.to_owned();
-
-        dbg!(
-            "Interface : '{}' Métrique : '{}' Note : '{}' Durée moyenne : '{}' Métrique désirée : '{}' Route : '{}' ",
-            nom_interface, metrique, note, duree_moyenne,metrique_desiree,details
-        );
     }
 }
