@@ -1,7 +1,7 @@
 use chrono::{DateTime, Local};
 use regex::Regex;
 use std::collections::{BTreeMap, HashMap, HashSet};
-use std::net::{IpAddr,Ipv6Addr};
+use std::net::{IpAddr, Ipv6Addr};
 use std::process::{Command, Stdio};
 use std::str::FromStr;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -89,9 +89,7 @@ impl fmt::Display for Interface {
         write!(
             f,
             "Interface : {} Durée moyenne : {} Nombre de mesures : {}",
-            nom_interface,
-            duree_moyenne,
-            nombre_mesures
+            nom_interface, duree_moyenne, nombre_mesures
         )
     }
 }
@@ -259,7 +257,7 @@ pub fn lister_routes() -> HashMap<String, Route> {
                 .unwrap();
 
             for element in regex.captures_iter(route) {
-                let mut adresse_passerelle=IpAddr::V6(Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, 1));
+                let mut adresse_passerelle = IpAddr::V6(Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, 1));
                 let interface: &str;
                 let mut src = None;
                 let mut metrique = None;
@@ -351,14 +349,14 @@ pub fn commuter_reseaux(routes: &Vec<Route>) {
         }
     }
 
-     if commutation_necessaire {
-         for route in routes {
-             let commande = Command::new("ip")
-                 .arg("route")
-                 .arg("delete")
-                 .arg("default")
-                 .arg("via")
-                 .arg(&route.adresse_passerelle.to_string())
+    if commutation_necessaire {
+        for route in routes {
+            let commande = Command::new("ip")
+                .arg("route")
+                .arg("delete")
+                .arg("default")
+                .arg("via")
+                .arg(&route.adresse_passerelle.to_string())
                 .stdout(Stdio::piped())
                 .output()
                 .unwrap();
@@ -372,44 +370,42 @@ pub fn commuter_reseaux(routes: &Vec<Route>) {
         }
 
         for route in routes {
-          
             let adresse_passerelle = &route.adresse_passerelle.to_string();
-            let metrique_desiree =&route.metrique_desiree.unwrap_or(10000).to_string();
-            let src:String;
+            let metrique_desiree = &route.metrique_desiree.unwrap_or(10000).to_string();
+            let src: String;
 
-                let mut parametres = vec![
-                    "route",
-                    "add",
-                    "default",
-                    "via",
-                    adresse_passerelle,
-                    "dev",
-                    &route.interface[..],
-                    "proto",
-                    "dhcp",
-                ];
+            let mut parametres = vec![
+                "route",
+                "add",
+                "default",
+                "via",
+                adresse_passerelle,
+                "dev",
+                &route.interface[..],
+                "proto",
+                "dhcp",
+            ];
 
-                if  let Some(source) = route.src {
-                     src = source.to_string();
-                    parametres.push("src");
-                    parametres.push(&src);
-                }
-                parametres.push("metric");
-                parametres.push(metrique_desiree);
+            if let Some(source) = route.src {
+                src = source.to_string();
+                parametres.push("src");
+                parametres.push(&src);
+            }
+            parametres.push("metric");
+            parametres.push(metrique_desiree);
 
-                let commande = Command::new("ip")
-                    .args(parametres)
-                    .stdout(Stdio::piped())
-                    .output()
-                    .unwrap();
+            let commande = Command::new("ip")
+                .args(parametres)
+                .stdout(Stdio::piped())
+                .output()
+                .unwrap();
 
-                let mut erreur = String::new();
-                if commande.stderr.len() != 0 {
-                    erreur = String::from_utf8(commande.stderr).unwrap_or_default();
-                }
+            let mut erreur = String::new();
+            if commande.stderr.len() != 0 {
+                erreur = String::from_utf8(commande.stderr).unwrap_or_default();
+            }
 
-                println!("ajouter route {} {} ", erreur, route);
-        
-         }
-     }
+            println!("ajouter route {} {} ", erreur, route);
+        }
+    }
 }
