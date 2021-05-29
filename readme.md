@@ -21,7 +21,7 @@
     echo ''
     echo '[Install]'
     echo 'WantedBy=multi-user.target'
- } > /etc/systemd/system/basculer-route-defaut.service'
+ } > /etc/systemd/system/basculer-route-defaut.service
 
 systemctl enable basculer-route-defaut.service
 

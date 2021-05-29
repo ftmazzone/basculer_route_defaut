@@ -14,6 +14,7 @@ use utilitaire::FormateurOption;
 
 static DUREE_ATTENTE_MAXIMUM_SECONDES: u64 = 5;
 static DUREE_VERIFICATION_CONNECTIVITE_INTERFACES_SECONDES: u64 = 300;
+static ADRESSE_IP_A_TESTER: &str = "1.1.1.1";
 
 //dbg!(routes_groupees.clone());
 
@@ -155,11 +156,18 @@ pub fn verifier_connectivite_interface(
     interface: &String,
     interfaces: &mut Interfaces,
 ) -> Option<Duration> {
+
+    let mut adresse_ip_a_tester=IpAddr::V6(Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, 1));
+    match IpAddr::from_str(ADRESSE_IP_A_TESTER) {
+        Ok(a) => adresse_ip_a_tester = a,
+        Err(e) => println!("Erreur verifier_connectivite_interface {}", e),
+    };
+
     let commande = Command::new("ping")
         .arg("-c 1")
         .arg("-w 5")
         .arg(format!("{}{}", "-I", interface))
-        .arg("1.1.1.1")
+        .arg(adresse_ip_a_tester.to_string())
         .stdout(Stdio::piped())
         .output()
         .unwrap();
