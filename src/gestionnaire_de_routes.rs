@@ -12,9 +12,9 @@ use std::{fmt, thread, time::Duration, time::Instant};
 use crate::utilitaire;
 use utilitaire::FormateurOption;
 
+static ADRESSE_IP_A_TESTER: &str = "1.1.1.1";
 static DUREE_ATTENTE_MAXIMUM_SECONDES: u64 = 5;
 static DUREE_VERIFICATION_CONNECTIVITE_INTERFACES_SECONDES: u64 = 300;
-static ADRESSE_IP_A_TESTER: &str = "1.1.1.1";
 
 //dbg!(routes_groupees.clone());
 
