@@ -1,0 +1,13 @@
+[package]
+name = "basculer_route_defaut"
+version = "0.1.0"
+authors = ["Florent Mazzone"]
+edition = "2018"
+license = "MIT"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+regex = "1"
+chrono = "0"
+simple-signal="1"
